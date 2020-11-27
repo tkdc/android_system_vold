@@ -190,9 +190,16 @@ status_t VoldNativeService::start() {
     if (ret != android::OK) {
         return ret;
     }
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::start: begin!";
+
     sp<ProcessState> ps(ProcessState::self());
     ps->startThreadPool();
     ps->giveThreadPoolName();
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::start: done!";
     return android::OK;
 }
 
@@ -203,6 +210,9 @@ status_t VoldNativeService::dump(int fd, const Vector<String16> & /* args */) {
         out << dump_permission.toString8() << endl;
         return PERMISSION_DENIED;
     }
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::dump";
 
     ACQUIRE_LOCK;
     out << "vold is happy!" << endl;
@@ -215,12 +225,18 @@ binder::Status VoldNativeService::setListener(
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::setListener";
+
     VolumeManager::Instance()->setListener(listener);
     return ok();
 }
 
 binder::Status VoldNativeService::monitor() {
     ENFORCE_UID(AID_SYSTEM);
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::monitor";
 
     // Simply acquire/release each lock for watchdog
     {
@@ -237,12 +253,18 @@ binder::Status VoldNativeService::reset() {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::reset";
+
     return translate(VolumeManager::Instance()->reset());
 }
 
 binder::Status VoldNativeService::shutdown() {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::shutdown";
 
     return translate(VolumeManager::Instance()->shutdown());
 }
@@ -251,12 +273,21 @@ binder::Status VoldNativeService::onUserAdded(int32_t userId, int32_t userSerial
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::onUserAdded:"
+              << " userId=" << userId
+              << ", userSerial=" << userSerial;
+
     return translate(VolumeManager::Instance()->onUserAdded(userId, userSerial));
 }
 
 binder::Status VoldNativeService::onUserRemoved(int32_t userId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::onUserRemoved:"
+              << " userId=" << userId;
 
     return translate(VolumeManager::Instance()->onUserRemoved(userId));
 }
@@ -265,6 +296,10 @@ binder::Status VoldNativeService::onUserStarted(int32_t userId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::onUserStarted:"
+              << " userId=" << userId;
+
     return translate(VolumeManager::Instance()->onUserStarted(userId));
 }
 
@@ -272,12 +307,20 @@ binder::Status VoldNativeService::onUserStopped(int32_t userId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::onUserStopped:"
+              << " userId=" << userId;
+
     return translate(VolumeManager::Instance()->onUserStopped(userId));
 }
 
 binder::Status VoldNativeService::onSecureKeyguardStateChanged(bool isShowing) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::onSecureKeyguardStateChanged:"
+              << " isShowing=" << isShowing;
 
     return translate(VolumeManager::Instance()->onSecureKeyguardStateChanged(isShowing));
 }
@@ -287,6 +330,12 @@ binder::Status VoldNativeService::partition(const std::string& diskId, int32_t p
     ENFORCE_UID(AID_SYSTEM);
     CHECK_ARGUMENT_ID(diskId);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::partition:"
+              << " diskId=" << diskId
+              << ", partitionType=" << partitionType
+              << ", ratio=" << ratio;
 
     auto disk = VolumeManager::Instance()->findDisk(diskId);
     if (disk == nullptr) {
@@ -307,6 +356,11 @@ binder::Status VoldNativeService::forgetPartition(const std::string& partGuid,
     CHECK_ARGUMENT_HEX(fsUuid);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::forgetPartition:"
+              << " partGuid=" << partGuid
+              << ", fsUuid=" << fsUuid;
+
     return translate(VolumeManager::Instance()->forgetPartition(partGuid, fsUuid));
 }
 
@@ -315,6 +369,12 @@ binder::Status VoldNativeService::mount(const std::string& volId, int32_t mountF
     ENFORCE_UID(AID_SYSTEM);
     CHECK_ARGUMENT_ID(volId);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::mount:"
+              << " volId=" << volId
+              << ", mountFlags=" << mountFlags
+              << ", mountUserId=" << mountUserId;
 
     auto vol = VolumeManager::Instance()->findVolume(volId);
     if (vol == nullptr) {
@@ -336,6 +396,10 @@ binder::Status VoldNativeService::unmount(const std::string& volId) {
     CHECK_ARGUMENT_ID(volId);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::unmount:"
+              << " volId=" << volId;
+
     auto vol = VolumeManager::Instance()->findVolume(volId);
     if (vol == nullptr) {
         return error("Failed to find volume " + volId);
@@ -348,6 +412,11 @@ binder::Status VoldNativeService::format(const std::string& volId, const std::st
     CHECK_ARGUMENT_ID(volId);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::format:"
+              << " volId=" << volId
+              << ", fsType=" << fsType;
+
     auto vol = VolumeManager::Instance()->findVolume(volId);
     if (vol == nullptr) {
         return error("Failed to find volume " + volId);
@@ -356,6 +425,11 @@ binder::Status VoldNativeService::format(const std::string& volId, const std::st
 }
 
 static binder::Status pathForVolId(const std::string& volId, std::string* path) {
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::pathForVolId:"
+              << " volId=" << volId;
+
     if (volId == "private" || volId == "null") {
         *path = "/data";
     } else {
@@ -383,6 +457,10 @@ binder::Status VoldNativeService::benchmark(
     CHECK_ARGUMENT_ID(volId);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::benchmark:"
+              << " volId=" << volId;
+
     std::string path;
     auto status = pathForVolId(volId, &path);
     if (!status.isOk()) return status;
@@ -398,6 +476,10 @@ binder::Status VoldNativeService::checkEncryption(const std::string& volId) {
     CHECK_ARGUMENT_ID(volId);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::checkEncryption:"
+              << " volId=" << volId;
+
     std::string path;
     auto status = pathForVolId(volId, &path);
     if (!status.isOk()) return status;
@@ -410,6 +492,11 @@ binder::Status VoldNativeService::moveStorage(const std::string& fromVolId,
     CHECK_ARGUMENT_ID(fromVolId);
     CHECK_ARGUMENT_ID(toVolId);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::moveStorage:"
+              << " fromVolId=" << fromVolId
+              << ", toVolId=" << toVolId;
 
     auto fromVol = VolumeManager::Instance()->findVolume(fromVolId);
     auto toVol = VolumeManager::Instance()->findVolume(toVolId);
@@ -429,6 +516,11 @@ binder::Status VoldNativeService::remountUid(int32_t uid, int32_t remountMode) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::remountUid:"
+              << " uid=" << uid
+              << ", remountMode=" << remountMode;
+
     std::string tmp;
     switch (remountMode) {
     case REMOUNT_MODE_NONE: tmp = "none"; break;
@@ -445,6 +537,10 @@ binder::Status VoldNativeService::mkdirs(const std::string& path) {
     CHECK_ARGUMENT_PATH(path);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::mkdirs:"
+              << " path=" << path;
+
     return translate(VolumeManager::Instance()->mkdirs(path));
 }
 
@@ -455,6 +551,12 @@ binder::Status VoldNativeService::createObb(const std::string& sourcePath,
     CHECK_ARGUMENT_HEX(sourceKey);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::createObb:"
+              << " sourcePath=" << sourcePath
+              << ", sourceKey=" << sourceKey
+              << ", ownerGid=" << ownerGid;
+
     return translate(
             VolumeManager::Instance()->createObb(sourcePath, sourceKey, ownerGid, _aidl_return));
 }
@@ -464,6 +566,10 @@ binder::Status VoldNativeService::destroyObb(const std::string& volId) {
     CHECK_ARGUMENT_ID(volId);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::destroyObb:"
+              << " volId=" << volId;
+
     return translate(VolumeManager::Instance()->destroyObb(volId));
 }
 
@@ -471,6 +577,10 @@ binder::Status VoldNativeService::fstrim(int32_t fstrimFlags,
         const android::sp<android::os::IVoldTaskListener>& listener) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fstrim:"
+              << " fstrimFlags=" << fstrimFlags;
 
     std::thread([=]() {
         android::vold::Trim(listener);
@@ -483,6 +593,9 @@ binder::Status VoldNativeService::runIdleMaint(
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::runIdleMaint";
+
     std::thread([=]() {
         android::vold::RunIdleMaint(listener);
     }).detach();
@@ -493,6 +606,9 @@ binder::Status VoldNativeService::abortIdleMaint(
         const android::sp<android::os::IVoldTaskListener>& listener) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::abortIdleMaint";
 
     std::thread([=]() {
         android::vold::AbortIdleMaint(listener);
@@ -505,12 +621,24 @@ binder::Status VoldNativeService::mountAppFuse(int32_t uid, int32_t pid, int32_t
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::mountAppFuse:"
+              << " uid=" << uid
+              << ", pid=" << pid
+              << ", mountId=" << mountId;
+
     return translate(VolumeManager::Instance()->mountAppFuse(uid, pid, mountId, _aidl_return));
 }
 
 binder::Status VoldNativeService::unmountAppFuse(int32_t uid, int32_t pid, int32_t mountId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::unmountAppFuse:"
+              << " uid=" << uid
+              << ", pid=" << pid
+              << ", mountId=" << mountId;
 
     return translate(VolumeManager::Instance()->unmountAppFuse(uid, pid, mountId));
 }
@@ -519,12 +647,18 @@ binder::Status VoldNativeService::fdeCheckPassword(const std::string& password) 
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeCheckPassword:";
+
     return translate(cryptfs_check_passwd(password.c_str()));
 }
 
 binder::Status VoldNativeService::fdeRestart() {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeRestart";
 
     // Spawn as thread so init can issue commands back to vold without
     // causing deadlock, usually as a result of prep_data_fs.
@@ -536,6 +670,9 @@ binder::Status VoldNativeService::fdeComplete(int32_t* _aidl_return) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeComplete";
+
     *_aidl_return = cryptfs_crypto_complete();
     return ok();
 }
@@ -543,6 +680,10 @@ binder::Status VoldNativeService::fdeComplete(int32_t* _aidl_return) {
 static int fdeEnableInternal(int32_t passwordType, const std::string& password,
         int32_t encryptionFlags) {
     bool noUi = (encryptionFlags & VoldNativeService::ENCRYPTION_FLAG_NO_UI) != 0;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeEnableInternal:";
+
 
     for (int tries = 0; tries < 2; ++tries) {
         int rc;
@@ -566,6 +707,9 @@ binder::Status VoldNativeService::fdeEnable(int32_t passwordType,
         const std::string& password, int32_t encryptionFlags) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeEnable";
 
     LOG(DEBUG) << "fdeEnable(" << passwordType << ", *, " << encryptionFlags << ")";
     if (e4crypt_is_native()) {
@@ -600,6 +744,10 @@ binder::Status VoldNativeService::fdeGetField(const std::string& key,
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeGetField:"
+              << " key=" << key;
+
     char buf[PROPERTY_VALUE_MAX];
     if (cryptfs_getfield(key.c_str(), buf, sizeof(buf)) != CRYPTO_GETFIELD_OK) {
         return error(StringPrintf("Failed to read field %s", key.c_str()));
@@ -613,6 +761,11 @@ binder::Status VoldNativeService::fdeSetField(const std::string& key,
         const std::string& value) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeSetField:"
+              << " key=" << key
+              << ", value=" << value;
 
     return translate(cryptfs_setfield(key.c_str(), value.c_str()));
 }
@@ -648,12 +801,18 @@ binder::Status VoldNativeService::fbeEnable() {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fdeSetField";
+
     return translateBool(e4crypt_initialize_global_de());
 }
 
 binder::Status VoldNativeService::mountDefaultEncrypted() {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::mountDefaultEncrypted";
 
     if (!e4crypt_is_native()) {
         // Spawn as thread so init can issue commands back to vold without
@@ -667,12 +826,18 @@ binder::Status VoldNativeService::initUser0() {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::initUser0";
+
     return translateBool(e4crypt_init_user0());
 }
 
 binder::Status VoldNativeService::isConvertibleToFbe(bool* _aidl_return) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::isConvertibleToFbe";
 
     *_aidl_return = cryptfs_isConvertibleToFBE() != 0;
     return ok();
@@ -682,12 +847,20 @@ binder::Status VoldNativeService::mountFstab(const std::string& mountPoint) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::mountFstab:"
+              << " mountPoint=" << mountPoint;
+
     return translateBool(e4crypt_mount_metadata_encrypted(mountPoint, false));
 }
 
 binder::Status VoldNativeService::encryptFstab(const std::string& mountPoint) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::encryptFstab:"
+              << " mountPoint=" << mountPoint;
 
     return translateBool(e4crypt_mount_metadata_encrypted(mountPoint, true));
 }
@@ -697,12 +870,21 @@ binder::Status VoldNativeService::createUserKey(int32_t userId, int32_t userSeri
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::createUserKey:"
+              << " userId=" << userId
+              << ", userSerial=" << userSerial;
+
     return translateBool(e4crypt_vold_create_user_key(userId, userSerial, ephemeral));
 }
 
 binder::Status VoldNativeService::destroyUserKey(int32_t userId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::destroyUserKey:"
+              << " userId=" << userId;
 
     return translateBool(e4crypt_destroy_user_key(userId));
 }
@@ -712,6 +894,11 @@ binder::Status VoldNativeService::addUserKeyAuth(int32_t userId, int32_t userSer
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::addUserKeyAuth:"
+              << " userId=" << userId
+              << ", userSerial=" << userSerial;
+
     return translateBool(e4crypt_add_user_key_auth(userId, userSerial, token, secret));
 }
 
@@ -720,12 +907,21 @@ binder::Status VoldNativeService::clearUserKeyAuth(int32_t userId, int32_t userS
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::clearUserKeyAuth:"
+              << " userId=" << userId
+              << ", userSerial=" << userSerial;
+
     return translateBool(e4crypt_clear_user_key_auth(userId, userSerial, token, secret));
 }
 
 binder::Status VoldNativeService::fixateNewestUserKeyAuth(int32_t userId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::fixateNewestUserKeyAuth:"
+              << " userId=" << userId;
 
     return translateBool(e4crypt_fixate_newest_user_key_auth(userId));
 }
@@ -735,12 +931,21 @@ binder::Status VoldNativeService::unlockUserKey(int32_t userId, int32_t userSeri
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
 
+//    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::unlockUserKey:"
+              << " userId=" << userId
+              << ", userSerial=" << userSerial;
+
     return translateBool(e4crypt_unlock_user_key(userId, userSerial, token, secret));
 }
 
 binder::Status VoldNativeService::lockUserKey(int32_t userId) {
     ENFORCE_UID(AID_SYSTEM);
     ACQUIRE_CRYPT_LOCK;
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::lockUserKey:"
+              << " userId=" << userId;
 
     return translateBool(e4crypt_lock_user_key(userId));
 }
@@ -752,6 +957,14 @@ binder::Status VoldNativeService::prepareUserStorage(const std::unique_ptr<std::
     auto uuid_ = uuid ? *uuid : empty_string;
     CHECK_ARGUMENT_HEX(uuid_);
 
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::prepareUserStorage:"
+              << " uuid=" << *uuid
+              << ", uuid_=" << uuid_
+              << ", userId=" << userId
+              << ", userSerial=" << userSerial
+              << ", flags=" << flags;
+
     ACQUIRE_CRYPT_LOCK;
     return translateBool(e4crypt_prepare_user_storage(uuid_, userId, userSerial, flags));
 }
@@ -762,6 +975,13 @@ binder::Status VoldNativeService::destroyUserStorage(const std::unique_ptr<std::
     std::string empty_string = "";
     auto uuid_ = uuid ? *uuid : empty_string;
     CHECK_ARGUMENT_HEX(uuid_);
+
+    // Log Info
+    LOG(INFO) << "TKA: VoldNativeService::destroyUserStorage:"
+              << " uuid=" << *uuid
+              << ", uuid_=" << uuid_
+              << ", userId=" << userId
+              << ", flags=" << flags;
 
     ACQUIRE_CRYPT_LOCK;
     return translateBool(e4crypt_destroy_user_storage(uuid_, userId, flags));
