@@ -39,7 +39,7 @@
 #include <sys/wait.h>
 
 // label of sdcard for write access
-#define PROP_SDCARD_LABEL "ro.sys.sdcardreflabel"
+#define PROP_SDCARD_LABEL "ro.sys.sdcard_rw_refuid"
 
 using android::base::StringPrintf;
 
@@ -136,7 +136,7 @@ status_t PublicVolume::doMount() {
 
     // get sdcard label of global property
     property_get(PROP_SDCARD_LABEL, property, "");
-    std::string sdcard_ref_label = (std::string)property;
+    std::string sdcard_rw_refuid = (std::string)property;
 
     // log info
     LOG(INFO) << "TKA: PublicVolume::doMount(): PRE_MOUNT"
@@ -149,13 +149,13 @@ status_t PublicVolume::doMount() {
 
     // if label of used sdcard is equal to reference label
     int sd_card_force_rw;
-    if (sdcard_ref_label.compare(stableName) == 0)
+    if (sdcard_rw_refuid.compare(stableName) == 0)
     {
         sd_card_force_rw = 1;
         LOG(INFO) << "TKA: PublicVolume::doMount(): "
         << "Reference Label of SDCard matches! "
         << "UsedSDCard=" << stableName << ", "
-        << PROP_SDCARD_LABEL << "=" << sdcard_ref_label
+        << PROP_SDCARD_LABEL << "=" << sdcard_rw_refuid
         << ". Force Write Access to SDCard!";
     }
     else
@@ -164,7 +164,7 @@ status_t PublicVolume::doMount() {
         LOG(INFO) << "TKA: PublicVolume::doMount(): "
         << "Reference Label of SDCard NOT matches! "
         << "UsedSDCard=" << stableName << ", "
-        << PROP_SDCARD_LABEL << "=" << sdcard_ref_label
+        << PROP_SDCARD_LABEL << "=" << sdcard_rw_refuid
         << ". Do Not Force Write Access to SDCard!";
     }
 
