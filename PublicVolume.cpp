@@ -28,6 +28,7 @@
 #include <android-base/logging.h>
 #include <cutils/fs.h>
 #include <private/android_filesystem_config.h>
+#include <cutils/properties.h>
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -35,6 +36,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+// label of sdcard for write access
+#define PROP_SDCARD_LABEL "ro.sys.sdcard_rw_refuid"
 
 using android::base::StringPrintf;
 
@@ -106,6 +110,7 @@ status_t PublicVolume::doDestroy() {
 
 status_t PublicVolume::doMount() {
     // TODO: expand to support mounting other filesystems
+    char property[PROPERTY_VALUE_MAX];
     readMetadata();
 
     if (!IsFilesystemSupported(mFsType)) {
@@ -142,6 +147,40 @@ status_t PublicVolume::doMount() {
     if (fs_prepare_dir(mRawPath.c_str(), 0700, AID_ROOT, AID_ROOT)) {
         PLOG(ERROR) << getId() << " failed to create mount points";
         return -errno;
+    }
+
+    // get sdcard label of global property
+    property_get(PROP_SDCARD_LABEL, property, "NA");
+    std::string sdcard_rw_refuid = (std::string)property;
+
+    // log info
+    LOG(INFO) << "TKA: PublicVolume::doMount(): PRE_MOUNT"
+              << " mFsType:" << mFsType
+              << ", mFsUuid:" << mFsUuid
+              << ", getId():" << getId()
+              << ", stableName:" << stableName
+              << ", mDevPath:" << mDevPath
+              << ", mRawPath:" << mRawPath;
+
+    // if label of used sdcard is equal to reference label
+    int sd_card_force_rw;
+    if (sdcard_rw_refuid.compare(stableName) == 0)
+    {
+        sd_card_force_rw = 1;
+        LOG(INFO) << "TKA: PublicVolume::doMount(): "
+        << "Reference Label of SDCard matches! "
+        << "UsedSDCard=" << stableName << ", "
+        << PROP_SDCARD_LABEL << "=" << sdcard_rw_refuid
+        << ". Force Write Access to SDCard!";
+    }
+    else
+    {
+        sd_card_force_rw = 0;
+        LOG(INFO) << "TKA: PublicVolume::doMount(): "
+        << "Reference Label of SDCard NOT matches! "
+        << "UsedSDCard=" << stableName << ", "
+        << PROP_SDCARD_LABEL << "=" << sdcard_rw_refuid
+        << ". Do Not Force Write Access to SDCard!";
     }
 
     int ret = 0;
@@ -208,8 +247,15 @@ status_t PublicVolume::doMount() {
 
     dev_t before = GetDevice(mFuseWrite);
 
+    // log info
+    LOG(INFO) << "TKA: PublicVolume::doMount(): PRE_EXECL:"
+              << " getMountFlags():" << getMountFlags()
+              << ", MountFlags::kPrimary:" << MountFlags::kPrimary;
+
     if (!(mFusePid = fork())) {
-        if (getMountFlags() & MountFlags::kPrimary) {
+        if ((getMountFlags() & MountFlags::kPrimary) || (sd_card_force_rw == 1)){
+            LOG(INFO) << "TKA: PublicVolume::doMount(): EXECL: "
+                      << "Mount Volume " << stableName << " as ReadWrite!";
             if (execl(kFusePath, kFusePath,
                     "-u", "1023", // AID_MEDIA_RW
                     "-g", "1023", // AID_MEDIA_RW
@@ -221,6 +267,8 @@ status_t PublicVolume::doMount() {
                 PLOG(ERROR) << "Failed to exec";
             }
         } else {
+            LOG(INFO) << "TKA: PublicVolume::doMount(): EXECL: "
+                      << "Mount Volume " << stableName << " as ReadOnly!";
             if (execl(kFusePath, kFusePath,
                     "-u", "1023", // AID_MEDIA_RW
                     "-g", "1023", // AID_MEDIA_RW
